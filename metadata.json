@@ -1,0 +1,10 @@
+{
+  "name": "FaktanyaDong",
+  "description": "Platform interaktif untuk cek link scam, berita hoax, dan legalitas pinjol dengan bantuan AI dan data OJK.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "AI-powered link analysis",
+    "Hoax detection",
+    "Fintech legality checking"
+  ]
+}
