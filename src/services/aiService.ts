@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { ScanResult, Language } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export const analyzeContent = async (
   type: 'scam' | 'hoax' | 'pinjol' | 'education',
@@ -14,69 +14,90 @@ export const analyzeContent = async (
     
     if (type === 'scam') {
       prompt = `
-        Analisis link berikut untuk potensi SCAM/PHISHING.
-        Link: ${input}
-        Mengaku sebagai: ${extra || "Tidak disebutkan"}
-        Bahasa Response: ${lang === 'id' ? 'Indonesia' : 'English'}
+        ANALYSIS TASK: Verify if the following link/content is a SCAM or PHISHING attempt.
+        CONTENT: ${input}
+        CLAIMED ENTITY: ${extra || "Not specified"}
+        LANGUAGE: ${lang === 'id' ? 'Indonesian' : 'English'}
         
-        Berikan jawaban dalam format JSON mentah (tanpa markdown block):
+        INSTRUCTIONS:
+        1. Use Google Search to check if the link/domain is associated with official records or reported as a scam.
+        2. Check for recent security alerts regarding the claimed entity.
+        3. Provide a detailed explanation of why it is safe or a scam.
+        
+        Return ONLY a JSON object:
         {
           "isSafe": boolean,
-          "confidence": number (0-1),
-          "trustScore": number (0-100),
-          "explanation": "penjelasan singkat tentang kenapa ini scam atau bukan",
-          "recommendation": "saran tindakan untuk user",
-          "risks": ["risiko 1", "risiko 2"],
-          "factors": ["faktor 1 (misal: domain baru)", "faktor 2"]
+          "confidence": number,
+          "trustScore": number,
+          "explanation": "concise explanation",
+          "recommendation": "actionable advice",
+          "risks": ["risk 1", "risk 2"],
+          "factors": ["factor 1", "factor 2"]
         }
       `;
     } else if (type === 'hoax') {
       prompt = `
-        Analisis berita dari link/konten berikut untuk potensi HOAX atau disinformasi.
-        Konten: ${input}
-        Bahasa Response: ${lang === 'id' ? 'Indonesia' : 'English'}
+        ANALYSIS TASK: Fact-check the following news topic or link for HOAX/DISINFORMATION.
+        CONTENT: ${input}
+        LANGUAGE: ${lang === 'id' ? 'Indonesian' : 'English'}
+        CURRENT DATE: ${new Date().toISOString().split('T')[0]}
+
+        INSTRUCTIONS:
+        1. MANDATORY: Use Google Search to find the latest, most accurate info as of today. 
+        2. Verify against multiple credible international and local news sources.
+        3. Look for official government statements or formal declarations.
         
-        Berikan jawaban dalam format JSON mentah (tanpa markdown block):
+        Return ONLY a JSON object:
         {
-          "isSafe": boolean (true if fact, false if hoax),
+          "isSafe": boolean,
           "confidence": number,
-          "trustScore": number (0-100),
-          "explanation": "analisis kebenaran berita",
-          "recommendation": "saran verifikasi lanjut",
-          "risks": ["poin misinformasi"],
-          "factors": ["sumber terverifikasi", "konsistensi narasi", "bukti pendukung"]
+          "trustScore": number,
+          "explanation": "comprehensive fact-check analysis",
+          "recommendation": "verification advice",
+          "risks": ["misinformation points"],
+          "factors": ["source 1", "source 2"]
         }
       `;
     } else if (type === 'pinjol') {
       prompt = `
-        VERIFIKASI LEGALITAS PINJAMAN ONLINE (PINJOL) melalui data OJK (Otoritas Jasa Keuangan).
-        Cek apakah entitas ini terdaftar di daftar resmi OJK per tahun 2024-2025.
-        Nama/Link: ${input}
-        Bahasa Response: ${lang === 'id' ? 'Indonesia' : 'English'}
+        ANALYSIS TASK: Verify the legality of a loan service (Pinjol) using OJK (Otoritas Jasa Keuangan) records.
+        CONTENT: ${input}
+        LANGUAGE: ${lang === 'id' ? 'Indonesian' : 'English'}
         
-        Berikan jawaban dalam format JSON mentah (tanpa markdown block):
+        INSTRUCTIONS:
+        1. Use Google Search to check the LATEST OJK official blacklist or registered list.
+        
+        Return ONLY a JSON object:
         {
-          "isSafe": boolean (true if legal/OJK registered, false if illegal),
+          "isSafe": boolean,
           "confidence": number,
-          "trustScore": number (0-100, 100 if officially OJK registered),
-          "explanation": "status pendaftaran di OJK dan rekam jejak",
-          "recommendation": "saran keamanan finansial",
-          "risks": ["konsekuensi pinjol ilegal jika relevan"],
-          "factors": ["Terdaftar di OJK", "Alamat kantor jelas", "Sesuai AFPI"]
+          "trustScore": number,
+          "explanation": "official OJK status and record",
+          "recommendation": "financial safety advice",
+          "risks": ["illegal consequences"],
+          "factors": ["OJK registered", "AFPI member", "clear office"]
         }
       `;
+    } else {
+      // Default fallback
+      prompt = `Tell me about ${input} related to digital literacy. Return as JSON.`;
     }
 
-    const response = await ai.models.generateContent({
+    const response = await genAI.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        tools: type === 'pinjol' ? [{ googleSearch: {} }] : undefined
-      }
+        tools: [
+          {
+            googleSearch: {},
+          },
+        ],
+      },
     });
+
+    const text = response.text.replace(/```json|```/g, "").trim();
     
-    const text = response.text || "{}";
     return JSON.parse(text);
   } catch (error) {
     console.error("AI Analysis Error:", error);

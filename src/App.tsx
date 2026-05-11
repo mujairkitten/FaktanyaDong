@@ -45,6 +45,7 @@ export default function App() {
   const [lang, setLang] = useState<Language>('id');
   const [view, setView] = useState<ViewType>('scam');
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
 
   // Inputs
@@ -72,14 +73,25 @@ export default function App() {
   const handleCheck = async () => {
     if (!input1) return;
     setLoading(true);
+    setLoadingStep(0);
     setResult(null);
     setThemeMenuOpen(false);
+
+    // Simulate step progression
+    const stepInterval = setInterval(() => {
+      setLoadingStep(prev => {
+        if (prev < t.loadingStages.length - 1) return prev + 1;
+        return prev;
+      });
+    }, 1500);
+
     try {
       const res = await analyzeContent(view, input1, input2, lang);
       setResult(res);
     } catch (e) {
       console.error(e);
     } finally {
+      clearInterval(stepInterval);
       setLoading(false);
     }
   };
@@ -110,8 +122,12 @@ export default function App() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          "w-full max-w-2xl mac-shadow rounded-3xl overflow-hidden glass border transition-all duration-300",
-          theme === 'light' ? "bg-white/90 border-slate-200" : theme === 'dark' ? "bg-slate-800/90 border-white/10" : "bg-black/80 border-white/5"
+          "w-full max-w-2xl mac-shadow rounded-3xl overflow-hidden backdrop-blur-3xl border transition-all duration-500",
+          theme === 'light' 
+            ? "bg-white/70 border-white/50" 
+            : theme === 'dark' 
+              ? "bg-slate-900/60 border-white/10" 
+              : "bg-black/60 border-white/5"
         )}
       >
         {/* Mac Header */}
@@ -129,7 +145,55 @@ export default function App() {
         {/* Window Content */}
         <div className="p-6 sm:p-10 min-h-[380px]">
             <AnimatePresence mode="wait">
-              {view === 'education' ? (
+              {loading ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.05 }}
+                  className="flex flex-col items-center justify-center h-full py-10 space-y-8"
+                >
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <ShieldAlert className="w-10 h-10 text-blue-500 animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  <div className="text-center space-y-4">
+                    <h3 className="text-xl font-black tracking-tight animate-pulse">
+                      {t.loadingStages[loadingStep]}
+                    </h3>
+                    
+                    <div className="flex gap-2 justify-center">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div 
+                          key={i} 
+                          className={cn(
+                            "w-2 h-2 rounded-full transition-all duration-500",
+                            i <= loadingStep ? "bg-blue-500 scale-125" : "bg-slate-300 dark:bg-white/10"
+                          )} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 w-full max-w-xs">
+                    <div className="p-3 glass rounded-xl border border-white/10 flex flex-col items-center gap-1">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <Zap className={cn("w-4 h-4 text-blue-500", loadingStep >= 1 && "animate-bounce")} />
+                      </div>
+                      <span className="text-[8px] font-black uppercase tracking-tighter opacity-40">Scanning</span>
+                    </div>
+                    <div className="p-3 glass rounded-xl border border-white/10 flex flex-col items-center gap-1">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <Star className={cn("w-4 h-4 text-yellow-500", loadingStep >= 2 && "animate-spin")} />
+                      </div>
+                      <span className="text-[8px] font-black uppercase tracking-tighter opacity-40">Verifying</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : view === 'education' ? (
                 <motion.div
                   key="education"
                   initial={{ opacity: 0, x: 20 }}
@@ -146,64 +210,70 @@ export default function App() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {EDUCATION_CONTENT[lang].map((article) => {
-                      const isSelected = selectedArticleId === article.id;
-                      const IconLabel = article.icon === 'ShieldCheck' ? ShieldCheck : 
-                                      article.icon === 'ShieldAlert' ? ShieldAlert :
-                                      article.icon === 'Newspaper' ? Newspaper : Wallet;
-                      
-                      return (
-                        <div 
-                          key={article.id}
-                          className={cn(
-                            "glass rounded-2xl border transition-all duration-300 overflow-hidden",
-                            theme === 'light' ? "border-slate-200" : "border-white/10",
-                            isSelected ? "ring-2 ring-blue-500" : "hover:border-blue-500/50"
-                          )}
-                        >
-                          <button 
-                            onClick={() => setSelectedArticleId(isSelected ? null : article.id)}
-                            className="w-full p-5 flex items-center justify-between group"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="p-3 bg-blue-600/10 text-blue-600 rounded-xl">
-                                <IconLabel className="w-5 h-5" />
-                              </div>
-                              <div className="text-left">
-                                <span className="block text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{article.category}</span>
-                                <h3 className="font-black tracking-tight">{article.title}</h3>
-                              </div>
-                            </div>
-                            <ChevronRight className={cn(
-                              "w-5 h-5 transition-transform duration-300 opacity-30",
-                              isSelected ? "rotate-90 opacity-100" : "group-hover:translate-x-1"
-                            )} />
-                          </button>
-
-                          <AnimatePresence>
-                            {isSelected && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
+                  <div className="flex flex-col sm:flex-row gap-4 items-start">
+                    {[0, 1].map((colIdx) => (
+                      <div key={colIdx} className="flex-1 flex flex-col gap-4 w-full">
+                        {EDUCATION_CONTENT[lang]
+                          .filter((_, idx) => idx % 2 === colIdx)
+                          .map((article) => {
+                            const isSelected = selectedArticleId === article.id;
+                            const IconLabel = article.icon === 'ShieldCheck' ? ShieldCheck : 
+                                            article.icon === 'ShieldAlert' ? ShieldAlert :
+                                            article.icon === 'Newspaper' ? Newspaper : Wallet;
+                            
+                            return (
+                              <div 
+                                key={article.id}
+                                className={cn(
+                                  "glass rounded-2xl border transition-all duration-300 overflow-hidden",
+                                  theme === 'light' ? "border-slate-200" : "border-white/10",
+                                  isSelected ? "ring-2 ring-blue-500" : "hover:border-blue-500/50"
+                                )}
                               >
-                                <div className="px-5 pb-5 border-t border-black/5 dark:border-white/5 pt-4">
-                                  <ul className="space-y-3">
-                                    {article.content.map((item, i) => (
-                                      <li key={i} className="flex gap-3 text-sm font-medium leading-relaxed opacity-80">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
-                                        {item}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      );
-                    })}
+                                <button 
+                                  onClick={() => setSelectedArticleId(isSelected ? null : article.id)}
+                                  className="w-full p-5 flex items-center justify-between group"
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-blue-600/10 text-blue-600 rounded-xl">
+                                      <IconLabel className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                      <span className="block text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{article.category}</span>
+                                      <h3 className="font-black tracking-tight">{article.title}</h3>
+                                    </div>
+                                  </div>
+                                  <ChevronRight className={cn(
+                                    "w-5 h-5 transition-transform duration-300 opacity-30",
+                                    isSelected ? "rotate-90 opacity-100" : "group-hover:translate-x-1"
+                                  )} />
+                                </button>
+      
+                                <AnimatePresence>
+                                  {isSelected && (
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: 'auto', opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                    >
+                                      <div className="px-5 pb-5 border-t border-black/5 dark:border-white/5 pt-4">
+                                        <ul className="space-y-3">
+                                          {article.content.map((item, i) => (
+                                            <li key={i} className="flex gap-3 text-sm font-medium leading-relaxed opacity-80">
+                                              <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0 mt-1.5" />
+                                              {item}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    ))}
                   </div>
                 </motion.div>
               ) : view === 'about' ? (
@@ -266,8 +336,8 @@ export default function App() {
                         <Info className="w-5 h-5" />
                       </div>
                       <div className="text-left">
-                        <h4 className="font-black text-sm tracking-tight">Version 1.2.0</h4>
-                        <p className="text-[10px] font-bold opacity-60">Stable Release</p>
+                        <h4 className="font-black text-sm tracking-tight">Version 26.05.11 BETA</h4>
+                        <p className="text-[10px] font-bold opacity-60">Beta Release</p>
                       </div>
                     </div>
                   </div>
@@ -299,17 +369,19 @@ export default function App() {
                         {view === 'pinjol' && (
                           <span className="px-2 py-0.5 bg-green-500/10 text-green-600 rounded text-[9px] font-black border border-green-500/20 flex items-center gap-1 uppercase tracking-tight">
                             <ShieldCheck className="w-3 h-3" />
-                            OJK Data 2024
+                            {t.ojkData}
                           </span>
                         )}
                       </div>
                     </div>
-                    <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[9px] sm:text-[10px] font-black tracking-widest uppercase self-start sm:self-center">Live Monitoring</span>
+                    <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[9px] sm:text-[10px] font-black tracking-widest uppercase self-start sm:self-center">{t.liveMonitoring}</span>
                   </div>
 
                   <div className="space-y-4 pt-2">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-widest opacity-50 px-1">{view === 'scam' ? 'URL Link' : view === 'hoax' ? 'News Link' : 'App Name'}</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest opacity-50 px-1">
+                        {view === 'scam' ? t.urlLabel : view === 'hoax' ? t.newsLabel : t.appNameLabel}
+                      </label>
                       <input
                         type="text"
                         value={input1}
@@ -324,7 +396,7 @@ export default function App() {
 
                     {view === 'scam' && (
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest opacity-50 px-1">Mengaku Sebagai</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest opacity-50 px-1">{t.claimedLabel}</label>
                         <input
                           type="text"
                           value={input2}
@@ -347,10 +419,20 @@ export default function App() {
                       )}
                     >
                       {loading ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          {t.checking}
-                        </>
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center gap-3">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>{t.loadingStages[loadingStep]}</span>
+                          </div>
+                          <div className="w-48 h-1 bg-white/20 rounded-full mt-2 overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-white"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${((loadingStep + 1) / t.loadingStages.length) * 100}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                        </div>
                       ) : (
                         <>
                           {lang === 'id' ? 'ANALISIS SEKARANG' : 'ANALYZE NOW'}
