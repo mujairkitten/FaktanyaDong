@@ -23,6 +23,8 @@ export const analyzeContent = async (
         1. Use Google Search to check if the link/domain is associated with official records or reported as a scam.
         2. Check for recent security alerts regarding the claimed entity.
         3. Provide a detailed explanation of why it is safe or a scam.
+        4. ALL text fields in the JSON response MUST be written in ${lang === 'id' ? 'Indonesian' : 'English'}.
+        5. MANDATORY STYLE: Write the explanation and recommendation in extremely simple, friendly, and easy-to-understand language for laypeople (orang awam). Avoid complex cyber-security jargon (like DNS, SSL handshake, headers) and keep it friendly, clear, and focused on practical impact. Explain it as if talking to a grandparent or teenager.
         
         Return ONLY a JSON object:
         {
@@ -46,6 +48,8 @@ export const analyzeContent = async (
         1. MANDATORY: Use Google Search to find the latest, most accurate info as of today. 
         2. Verify against multiple credible international and local news sources.
         3. Look for official government statements or formal declarations.
+        4. ALL text fields in the JSON response MUST be written in ${lang === 'id' ? 'Indonesian' : 'English'}.
+        5. MANDATORY STYLE: Write the explanation and recommendation in extremely simple, friendly, and easy-to-understand language for laypeople (orang awam). Avoid complex terminology and make it friendly, clear, and focused on practical impact. Explain it as if talking to a grandparent or teenager.
         
         Return ONLY a JSON object:
         {
@@ -66,6 +70,8 @@ export const analyzeContent = async (
         
         INSTRUCTIONS:
         1. Use Google Search to check the LATEST OJK official blacklist or registered list.
+        2. ALL text fields in the JSON response MUST be written in ${lang === 'id' ? 'Indonesian' : 'English'}.
+        3. MANDATORY STYLE: Write the explanation and recommendation in extremely simple, friendly, and easy-to-understand language for laypeople (orang awam). Avoid complex financial or legal jargon and keep it friendly, clear, and focused on practical impact. Explain it as if talking to a grandparent or teenager.
         
         Return ONLY a JSON object:
         {
