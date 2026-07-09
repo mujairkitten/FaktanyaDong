@@ -61,8 +61,10 @@ export default function App() {
 
   // Custom scrollbar states for Dock
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
   const [scrollPercent, setScrollPercent] = useState(0);
   const [hasScrollbar, setHasScrollbar] = useState(false);
+  const [dockWidth, setDockWidth] = useState<number | null>(null);
 
   const updateScrollPercent = () => {
     const el = scrollContainerRef.current;
@@ -76,6 +78,11 @@ export default function App() {
         setHasScrollbar(false);
       }
     }
+
+    const dockEl = dockRef.current;
+    if (dockEl) {
+      setDockWidth(dockEl.getBoundingClientRect().width);
+    }
   };
 
   useEffect(() => {
@@ -85,15 +92,14 @@ export default function App() {
     window.addEventListener('resize', updateScrollPercent);
     
     const el = scrollContainerRef.current;
-    if (!el) return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', updateScrollPercent);
-    };
+    const dockEl = dockRef.current;
     
     const observer = new ResizeObserver(() => {
       updateScrollPercent();
     });
-    observer.observe(el);
+    
+    if (el) observer.observe(el);
+    if (dockEl) observer.observe(dockEl);
 
     return () => {
       clearTimeout(timer);
@@ -186,8 +192,9 @@ export default function App() {
         key="window"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
+        style={{ width: dockWidth ? `${dockWidth}px` : '100%', maxWidth: '100%' }}
         className={cn(
-          "w-full max-w-2xl mac-shadow rounded-3xl overflow-hidden backdrop-blur-3xl border transition-all duration-500",
+          "mac-shadow rounded-3xl overflow-hidden backdrop-blur-3xl border transition-all duration-500",
           theme === 'light' 
             ? "bg-white/70 border-white/50" 
             : theme === 'dark' 
@@ -371,8 +378,8 @@ export default function App() {
                     <div className="p-4 bg-blue-500/5 rounded-xl border border-blue-500/10">
                       <p className="text-xs font-bold text-blue-600">
                         {lang === 'id' ? 
-                          '🚀 Dibuat dengan kecerdasan buatan (Google Gemini) oleh Mujairkitten untuk masa depan digital yang lebih aman.' : 
-                          '🚀 Built with artificial intelligence (Google Gemini) by Mujairkitten for a safer digital future.'
+                          '🚀 Dibuat dengan kecerdasan buatan (Google AI Studio) oleh STAKS Secure untuk masa depan digital yang lebih aman.' : 
+                          '🚀 Built with artificial intelligence (Google AI Studio) by STAKS Secure for a safer digital future.'
                         }
                       </p>
                     </div>
@@ -401,18 +408,11 @@ export default function App() {
                         <Info className="w-5 h-5" />
                       </div>
                       <div className="text-left">
-                        <h4 className="font-display font-black text-sm tracking-tight">Version 26.05.11 BETA</h4>
-                        <p className="text-[10px] font-bold opacity-60">Beta Release</p>
+                        <h4 className="font-display font-black text-sm tracking-tight">Version 26.06.10</h4>
+                        <p className="text-[10px] font-bold opacity-60 flex items-center gap-1">Beta Release</p>
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    onClick={reset}
-                    className="w-full py-4 glass rounded-xl font-black text-xs tracking-[0.2em] uppercase hover:bg-neutral-500/10 transition-colors shadow-sm"
-                  >
-                    {t.back}
-                  </button>
                 </motion.div>
               ) : !result ? (
                 <motion.div
@@ -799,7 +799,7 @@ export default function App() {
       </motion.div>
 
       {/* macOS Dock */}
-      <div className="fixed bottom-6 left-0 right-0 z-[100] flex flex-col items-center px-4 pointer-events-none">
+      <div className="fixed bottom-12 left-0 right-0 z-[100] flex flex-col items-center px-4 pointer-events-none">
         
         <AnimatePresence>
           {themeMenuOpen && (
@@ -843,14 +843,17 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <div className={cn(
-          "rounded-[2.5rem] shadow-2xl mac-shadow border backdrop-blur-3xl overflow-hidden pointer-events-auto max-w-full flex flex-col transition-all duration-300",
-          theme === 'light' 
-            ? "border-black/10 bg-white/85 text-neutral-800" 
-            : theme === 'dark' 
-              ? "border-white/10 bg-slate-950/70 text-white" 
-              : "border-white/10 bg-black/85 text-white"
-        )}>
+        <div 
+          ref={dockRef}
+          className={cn(
+            "rounded-[2.5rem] shadow-2xl mac-shadow border backdrop-blur-3xl overflow-hidden pointer-events-auto max-w-full flex flex-col transition-all duration-300",
+            theme === 'light' 
+              ? "border-black/10 bg-white/85 text-neutral-800" 
+              : theme === 'dark' 
+                ? "border-white/10 bg-slate-950/70 text-white" 
+                : "border-white/10 bg-black/85 text-white"
+          )}
+        >
           <div 
             ref={scrollContainerRef}
             onScroll={updateScrollPercent}

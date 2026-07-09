@@ -27,7 +27,7 @@ export const TRANSLATIONS = {
     claimedLabel: 'Mengaku Sebagai',
     hoaxPlaceholder: 'Tempel link atau tulis topik berita di sini...',
     pinjolPlaceholder: 'Masukkan nama atau link aplikasi pinjol...',
-    resultTitle: 'Laporan Pemeriksaan AI (Mudah Dipahami)',
+    resultTitle: 'Laporan Pemeriksaan AI',
     safe: 'Aman Diakses',
     unsafe: 'Hati-hati! Berbahaya',
     unknown: 'Belum Bisa Dipastikan',
